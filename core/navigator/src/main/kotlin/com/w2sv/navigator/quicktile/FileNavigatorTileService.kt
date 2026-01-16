@@ -4,44 +4,48 @@ import android.annotation.SuppressLint
 import android.app.Dialog
 import android.os.Build
 import android.service.quicksettings.Tile
-import android.service.quicksettings.TileService
 import androidx.annotation.IntDef
-import com.w2sv.common.di.AppDispatcher
-import com.w2sv.common.di.GlobalScope
 import com.w2sv.core.navigator.R
-import com.w2sv.kotlinutils.coroutines.flow.collectOn
 import com.w2sv.kotlinutils.coroutines.launchDelayed
 import com.w2sv.navigator.FileNavigator
 import com.w2sv.navigator.shared.mainActivityIntent
 import com.w2sv.navigator.shared.mainActivityPendingIntent
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
-import slimber.log.i
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
-internal class FileNavigatorTileService : TileService() {
-
-    @Inject
-    @GlobalScope(AppDispatcher.Default)
-    internal lateinit var scope: CoroutineScope
+internal class FileNavigatorTileService : LoggingTileService() {
 
     @Inject
     internal lateinit var fileNavigatorIsRunning: FileNavigator.IsRunning
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var listeningJob: Job? = null
+
     /**
-     * Called every time the quick tile pan is expanded. onStopListening behaves vice-versa.
+     * Called every time the quick settings pan is expanded. onStopListening behaves vice-versa.
      */
     override fun onStartListening() {
-        i { "onStartListening" }
+        super.onStartListening()
 
-        // Update tile state reactively on navigator status change
-        fileNavigatorIsRunning.collectOn(scope) { isRunning ->
-            updateTileState(if (isRunning) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE)
+        // Launch navigator and tile state synchronization job
+        listeningJob?.cancel()
+        listeningJob = scope.launch {
+            fileNavigatorIsRunning.collect { isRunning ->
+                qsTile.updateState(if (isRunning) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE)
+            }
         }
     }
 
     override fun onClick() {
+        super.onClick()
+
         when (qsTile.state) {
             Tile.STATE_ACTIVE -> {
                 FileNavigator.stop(this)
@@ -82,10 +86,8 @@ internal class FileNavigatorTileService : TileService() {
                     setTheme(R.style.RoundedCornersAlertDialog)
                     setContentView(R.layout.tile_dialog)
                     setOnShowListener {
-                        scope.launchDelayed(
-                            250
-                        ) {
-                            // Add small delay to make the dialog visible for a bit longer than merely a couple of milliseconds for better UX
+                        // Dismiss dialog after a small delay to prevent flashing
+                        scope.launchDelayed(250) {
                             FileNavigator.start(this@FileNavigatorTileService)
                             dismiss()
                         }
@@ -93,12 +95,22 @@ internal class FileNavigatorTileService : TileService() {
                 }
         )
     }
+
+    override fun onStopListening() {
+        super.onStopListening()
+        listeningJob?.cancel()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
+    }
 }
 
 @IntDef(Tile.STATE_ACTIVE, Tile.STATE_INACTIVE, Tile.STATE_UNAVAILABLE)
 private annotation class TileState
 
-private fun TileService.updateTileState(@TileState state: Int) {
-    qsTile.state = state
-    qsTile.updateTile()
+private fun Tile.updateState(@TileState state: Int) {
+    this.state = state
+    updateTile()
 }
