@@ -11,13 +11,13 @@ import com.w2sv.navigator.FileNavigator
 import com.w2sv.navigator.shared.mainActivityIntent
 import com.w2sv.navigator.shared.mainActivityPendingIntent
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 internal class FileNavigatorTileService : LoggingTileService() {
@@ -47,28 +47,23 @@ internal class FileNavigatorTileService : LoggingTileService() {
         super.onClick()
 
         when (qsTile.state) {
-            Tile.STATE_ACTIVE -> {
-                FileNavigator.stop(this)
-            }
-
-            Tile.STATE_INACTIVE -> {
-                // Start navigator if all required permissions are granted, otherwise launch MainActivity, which will invoke the 'Required Permissions' screen
-                if (FileNavigator.necessaryPermissionsGranted(this)) {
-                    showDialogAndLaunchNavigator()
-                } else {
-                    startMainActivityAndCollapse()
-                }
-            }
+            Tile.STATE_ACTIVE -> FileNavigator.stop(this)
+            Tile.STATE_INACTIVE -> activateNavigator()
         }
     }
 
-    @SuppressLint("StartActivityAndCollapseDeprecated")
-    private fun startMainActivityAndCollapse() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startActivityAndCollapse(mainActivityPendingIntent(this))
-        } else {
-            @Suppress("DEPRECATION")
-            startActivityAndCollapse(mainActivityIntent(this))
+    /**
+     * Either
+     * - starts the navigator immediately via launch dialog if permissions are granted and the device is unlocked
+     * - prompts the user to unlock if permissions are granted but the device is locked (launch dialog is not shown on lock screen)
+     * - launches MainActivity if required permissions are missing, which will result in the permissions screen being shown
+     */
+    private fun activateNavigator() {
+        val permissionsGranted = FileNavigator.necessaryPermissionsGranted(this)
+        when {
+            permissionsGranted && !isLocked -> showDialogAndLaunchNavigator()
+            permissionsGranted -> unlockAndRun { showDialogAndLaunchNavigator() }
+            else -> startMainActivityAndCollapse()
         }
     }
 
@@ -94,6 +89,16 @@ internal class FileNavigatorTileService : LoggingTileService() {
                     }
                 }
         )
+    }
+
+    @SuppressLint("StartActivityAndCollapseDeprecated")
+    private fun startMainActivityAndCollapse() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startActivityAndCollapse(mainActivityPendingIntent(this))
+        } else {
+            @Suppress("DEPRECATION")
+            startActivityAndCollapse(mainActivityIntent(this))
+        }
     }
 
     override fun onStopListening() {
