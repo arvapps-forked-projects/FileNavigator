@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="LaunchDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
+        <item name="launchDialogBackgroundColor">?attr/colorSurfaceVariant</item>
+        <item name="launchDialogForegroundColor">?attr/colorPrimary</item>
+    </style>
+</resources>

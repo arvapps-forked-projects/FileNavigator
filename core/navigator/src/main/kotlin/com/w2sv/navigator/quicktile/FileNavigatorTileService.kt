@@ -78,7 +78,7 @@ internal class FileNavigatorTileService : LoggingTileService() {
         showDialog(
             Dialog(this)
                 .apply {
-                    setTheme(R.style.RoundedCornersAlertDialog)
+                    setTheme(R.style.LaunchDialogTheme)
                     setContentView(R.layout.tile_dialog)
                     setOnShowListener {
                         // Dismiss dialog after a small delay to prevent flashing

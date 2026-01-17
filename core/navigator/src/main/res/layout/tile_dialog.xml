@@ -3,18 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/ic_launcher_background"
+    android:background="?launchDialogBackgroundColor"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="16dp"
-    tools:viewBindingIgnore="true">
+    android:padding="16dp">
 
     <ImageView
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:contentDescription="@null"
         android:src="@drawable/ic_app_logo_24"
-        android:tint="@color/ic_launcher_foreground"
+        android:tint="?launchDialogForegroundColor"
         tools:ignore="UseAppTint" />
 
     <Space
@@ -35,6 +34,5 @@
     <ProgressBar
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:indeterminateTint="@color/ic_launcher_foreground" />
-
+        android:indeterminateTint="?launchDialogForegroundColor" />
 </LinearLayout>
