@@ -1,4 +1,0 @@
-<resources>
-    <attr name="launchDialogBackgroundColor" format="color" />
-    <attr name="launchDialogForegroundColor" format="color" />
-</resources>

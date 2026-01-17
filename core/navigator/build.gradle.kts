@@ -21,7 +21,6 @@ dependencies {
     implementation(libs.slimber)
 
     implementation(libs.google.guava)
-    implementation(libs.google.material)
     implementation(libs.w2sv.simplestorage)
 
     // ==============

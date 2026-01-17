@@ -72,7 +72,6 @@ compose-lint-checks = { module = "com.slack.lint.compose:compose-lint-checks", v
 google-guava = "com.google.guava:guava:33.5.0-jre"
 google-hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 google-hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
-google-material = "com.google.android.material:material:1.13.0"
 junit = { module = "junit:junit", version.ref = "junit" }
 # @keep
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

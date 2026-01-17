@@ -1,12 +1,9 @@
 package com.w2sv.navigator.quicktile
 
 import android.annotation.SuppressLint
-import android.app.Dialog
 import android.os.Build
 import android.service.quicksettings.Tile
 import androidx.annotation.IntDef
-import com.w2sv.core.navigator.R
-import com.w2sv.kotlinutils.coroutines.launchDelayed
 import com.w2sv.navigator.FileNavigator
 import com.w2sv.navigator.shared.mainActivityIntent
 import com.w2sv.navigator.shared.mainActivityPendingIntent
@@ -54,41 +51,15 @@ internal class FileNavigatorTileService : LoggingTileService() {
 
     /**
      * Either
-     * - starts the navigator immediately via launch dialog if permissions are granted and the device is unlocked
-     * - prompts the user to unlock if permissions are granted but the device is locked (launch dialog is not shown on lock screen)
+     * - starts the navigator immediately via launch dialog if permissions are granted
+     * or
      * - launches MainActivity if required permissions are missing, which will result in the permissions screen being shown
      */
     private fun activateNavigator() {
-        val permissionsGranted = FileNavigator.necessaryPermissionsGranted(this)
-        when {
-            permissionsGranted && !isLocked -> showDialogAndLaunchNavigator()
-            permissionsGranted -> unlockAndRun { showDialogAndLaunchNavigator() }
-            else -> startMainActivityAndCollapse()
+        when (FileNavigator.necessaryPermissionsGranted(this)) {
+            true -> FileNavigator.start(this@FileNavigatorTileService)
+            false -> startMainActivityAndCollapse()
         }
-    }
-
-    /**
-     * Starting from Sdk Version 31 (Android 12), foreground services can't be started from the background.
-     * Therefore show a Dialog, which promotes the app to a foreground process state, and start the FGS while it's showing.
-     *
-     * https://developer.android.com/develop/background-work/services/foreground-services#bg-access-restrictions
-     * https://stackoverflow.com/questions/77331327/start-a-foreground-service-from-a-quick-tile-on-android-targetsdkversion-34-and
-     */
-    private fun showDialogAndLaunchNavigator() {
-        showDialog(
-            Dialog(this)
-                .apply {
-                    setTheme(R.style.LaunchDialogTheme)
-                    setContentView(R.layout.tile_dialog)
-                    setOnShowListener {
-                        // Dismiss dialog after a small delay to prevent flashing
-                        scope.launchDelayed(250) {
-                            FileNavigator.start(this@FileNavigatorTileService)
-                            dismiss()
-                        }
-                    }
-                }
-        )
     }
 
     @SuppressLint("StartActivityAndCollapseDeprecated")

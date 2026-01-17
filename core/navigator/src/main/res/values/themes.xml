@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="LaunchDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
-        <item name="launchDialogBackgroundColor">@color/ic_launcher_background</item>
-        <item name="launchDialogForegroundColor">@color/ic_launcher_foreground</item>
-    </style>
-
     <!-- https://stackoverflow.com/a/2700683/12083276 -->
     <style name="Theme.Transparent" parent="android:Theme">
         <item name="android:windowIsTranslucent">true</item>
