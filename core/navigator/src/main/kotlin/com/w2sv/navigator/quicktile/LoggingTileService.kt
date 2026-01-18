@@ -8,7 +8,7 @@ import com.w2sv.androidutils.content.logString
 import com.w2sv.common.logging.logIdentifier
 import slimber.log.i
 
-internal abstract class LoggingTileService : TileService() {
+abstract class LoggingTileService : TileService() {
 
     init {
         i { "Lifecycle: $logIdentifier.init" }

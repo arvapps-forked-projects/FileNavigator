@@ -5,8 +5,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarDuration
@@ -17,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,9 +48,19 @@ data class AppSnackbarVisuals(
 
 data class SnackbarAction(val label: String, val callback: () -> Unit)
 
-enum class SnackbarKind(val icon: ImageVector, val iconTint: Color) {
-    Success(Icons.Outlined.Check, ResultColor.success),
-    Error(Icons.Outlined.Warning, ResultColor.error)
+enum class SnackbarKind(val icon: ImageVector) {
+    Success(Icons.Outlined.Check),
+    Error(Icons.Rounded.Warning),
+    Info(Icons.Rounded.Warning);
+
+    val iconTint: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = when (this) {
+            Success -> ResultColor.success
+            Error -> ResultColor.error
+            Info -> LocalContentColor.current
+        }
 }
 
 @Composable

@@ -17,7 +17,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-internal class FileNavigatorTileService : LoggingTileService() {
+class FileNavigatorTileService : LoggingTileService() {
 
     @Inject
     internal lateinit var fileNavigatorIsRunning: FileNavigator.IsRunning
