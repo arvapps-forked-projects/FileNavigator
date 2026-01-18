@@ -1,7 +1,6 @@
 package com.w2sv.filenavigator.ui.screen.navigatorsettings.list
 
 import android.app.StatusBarManager
-import android.content.ComponentName
 import android.content.Context
 import android.graphics.drawable.Icon
 import android.os.Build
@@ -10,6 +9,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.w2sv.androidutils.content.componentName
+import com.w2sv.androidutils.service.systemService
 import com.w2sv.core.common.R
 import com.w2sv.filenavigator.ui.designsystem.AppSnackbarVisuals
 import com.w2sv.filenavigator.ui.designsystem.SnackbarKind
@@ -27,7 +28,7 @@ fun rememberRequestAddFileNavigatorTile(
 ): () -> Unit =
     remember(context, snackbarController) {
         {
-            val statusBarManager = context.getSystemService(StatusBarManager::class.java)
+            val statusBarManager = context.systemService<StatusBarManager>()
             requestAddFileNavigatorTile(context, statusBarManager) { result ->
                 when (result) {
                     StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> snackbarController.showReplacing {
@@ -60,7 +61,7 @@ fun rememberRequestAddFileNavigatorTile(
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private fun requestAddFileNavigatorTile(context: Context, statusBarManager: StatusBarManager, onResult: (Int) -> Unit) {
     statusBarManager.requestAddTileService(
-        ComponentName(context, FileNavigatorTileService::class.java),
+        componentName<FileNavigatorTileService>(context),
         context.getString(R.string.app_name),
         Icon.createWithResource(context, R.drawable.ic_app_logo_24),
         context.mainExecutor,

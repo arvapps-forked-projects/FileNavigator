@@ -3,7 +3,7 @@ package com.w2sv.navigator.moving.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import com.w2sv.androidutils.content.restartActivityTaskIntent
+import com.w2sv.androidutils.content.componentName
 import com.w2sv.androidutils.widget.showToast
 import com.w2sv.common.logging.LoggingComponentActivity
 import com.w2sv.common.uri.MediaUri
@@ -50,7 +50,7 @@ internal class ViewFileIfPresentActivity : LoggingComponentActivity() {
 
     companion object {
         fun intent(args: MoveFileNotificationData, context: Context): Intent =
-            restartActivityTaskIntent<ViewFileIfPresentActivity>(context)
+            Intent.makeRestartActivityTask(componentName<ViewFileIfPresentActivity>(context))
                 .putExtra(MoveFileNotificationData.EXTRA, args)
     }
 }

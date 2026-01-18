@@ -4,7 +4,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.IBinder
 import android.service.quicksettings.TileService
-import com.w2sv.androidutils.content.logString
+import com.w2sv.androidutils.content.toDebugString
 import com.w2sv.common.logging.logIdentifier
 import slimber.log.i
 
@@ -45,7 +45,7 @@ abstract class LoggingTileService : TileService() {
     }
 
     override fun onBind(intent: Intent?): IBinder? {
-        i { "Lifecycle: $logIdentifier.onBind | intent=${intent?.logString()}" }
+        i { "Lifecycle: $logIdentifier.onBind | intent=${intent?.toDebugString()}" }
         return super.onBind(intent)
     }
 
