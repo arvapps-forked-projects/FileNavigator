@@ -39,10 +39,10 @@ import com.w2sv.navigator.moving.activity.QuickMoveDestinationAccessPermissionAc
 import com.w2sv.navigator.moving.activity.QuickMoveDestinationAccessPermissionActivity.Action.ShowRationale
 import com.w2sv.navigator.moving.activity.QuickMoveDestinationAccessPermissionActivity.Action.StartMove
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import slimber.log.i
-import javax.inject.Inject
 
 /**
  * Entry activity for resolving destination access for a quick-move operation.

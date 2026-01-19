@@ -5,12 +5,13 @@ import com.w2sv.domain.model.MovedFile
 import com.w2sv.domain.repository.MovedFileRepository
 import com.w2sv.domain.usecase.GetMoveHistoryUseCase
 import com.w2sv.filenavigator.ui.util.LifecycleLoggingViewModel
-import com.w2sv.navigator.FileNavigator
+import com.w2sv.navigator.di.FileNavigatorIsRunning
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 class HomeScreenViewModel @Inject constructor(
     private val movedFileRepository: MovedFileRepository,
     getMoveHistoryUseCase: GetMoveHistoryUseCase,
-    val navigatorIsRunning: FileNavigator.IsRunning
+    @FileNavigatorIsRunning val navigatorIsRunning: StateFlow<Boolean>
 ) : LifecycleLoggingViewModel() {
 
     val moveHistory = getMoveHistoryUseCase

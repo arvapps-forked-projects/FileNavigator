@@ -5,6 +5,7 @@ import android.os.Build
 import android.service.quicksettings.Tile
 import androidx.annotation.IntDef
 import com.w2sv.navigator.FileNavigator
+import com.w2sv.navigator.di.FileNavigatorIsRunning
 import com.w2sv.navigator.shared.mainActivityIntent
 import com.w2sv.navigator.shared.mainActivityPendingIntent
 import dagger.hilt.android.AndroidEntryPoint
@@ -14,13 +15,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class FileNavigatorTileService : LoggingTileService() {
 
     @Inject
-    internal lateinit var fileNavigatorIsRunning: FileNavigator.IsRunning
+    @FileNavigatorIsRunning
+    internal lateinit var fileNavigatorIsRunning: StateFlow<Boolean>
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var listeningJob: Job? = null

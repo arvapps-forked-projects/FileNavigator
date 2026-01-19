@@ -9,6 +9,7 @@ import com.w2sv.common.util.hasPostNotificationsPermission
 import com.w2sv.navigator.domain.notifications.ForegroundNotificationProvider
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import slimber.log.i
@@ -18,7 +19,7 @@ import slimber.log.w
 class FileNavigator : LoggingUnboundService() {
 
     @Inject
-    internal lateinit var isRunning: IsRunning
+    internal lateinit var state: State
 
     @Inject
     internal lateinit var foregroundNotificationProvider: ForegroundNotificationProvider
@@ -47,12 +48,12 @@ class FileNavigator : LoggingUnboundService() {
         )
 
         fileNavigationLauncher.launch()
-        isRunning.set(true)
+        state.setIsRunning(true)
     }
 
     private fun stop() {
         i { "Stopping FileNavigator" }
-        isRunning.set(false)
+        state.setIsRunning(false)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -60,14 +61,17 @@ class FileNavigator : LoggingUnboundService() {
     override fun onDestroy() {
         super.onDestroy()
         fileNavigationLauncher.tearDown()
-        isRunning.set(false)
+        state.setIsRunning(false)
     }
 
-    class IsRunning internal constructor(private val mutableStateFlow: MutableStateFlow<Boolean>) :
-        StateFlow<Boolean> by mutableStateFlow {
+    @Singleton
+    internal class State @Inject constructor() {
 
-        internal fun set(value: Boolean) {
-            mutableStateFlow.value = value
+        val isRunning: StateFlow<Boolean>
+            field = MutableStateFlow(false)
+
+        fun setIsRunning(value: Boolean) {
+            isRunning.value = value
         }
     }
 
