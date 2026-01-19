@@ -8,6 +8,7 @@ import android.util.Size
 import androidx.core.app.NotificationCompat
 import androidx.core.text.bold
 import androidx.core.text.buildSpannedString
+import com.w2sv.common.di.ApplicationDefaultScope
 import com.w2sv.common.logging.log
 import com.w2sv.common.util.formattedFileSize
 import com.w2sv.common.util.lineBreakSuffixed
@@ -29,20 +30,22 @@ import com.w2sv.navigator.notifications.NotificationEventReceiver
 import com.w2sv.navigator.notifications.api.MultiNotificationController
 import com.w2sv.navigator.notifications.api.NotificationEnvironment
 import com.w2sv.navigator.notifications.api.setBigTextStyle
-import com.w2sv.navigator.notifications.helper.GetQuickMoveDestination
+import com.w2sv.navigator.notifications.helper.GetQuickMoveDestinations
 import com.w2sv.navigator.notifications.helper.iconBitmap
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.collections.set
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import slimber.log.i
 
-// TODO make stateless, store state in event handler & unsingleton
+// TODO make stateless, store state in event handler & unsingletonize this class
 @Singleton
 internal class MoveFileNotificationController @Inject constructor(
     environment: NotificationEnvironment,
-    private val getQuickMoveDestination: GetQuickMoveDestination,
-    private val navigatorIntents: NavigatorIntents
+    private val getQuickMoveDestinations: GetQuickMoveDestinations,
+    private val navigatorIntents: NavigatorIntents,
+    @ApplicationDefaultScope private val scope: CoroutineScope
 ) : MultiNotificationController<MoveFileNotificationController.Args>(
     environment = environment,
     appNotification = AppNotification.NewNavigatableFile,
@@ -64,13 +67,15 @@ internal class MoveFileNotificationController @Inject constructor(
         field = mutableMapOf<Int, Args>()
 
     fun post(moveFile: MoveFile) {
-        val args = Args(
-            moveFile = moveFile,
-            quickMoveDestinations = getQuickMoveDestination(moveFile.fileAndSourceType)
-                .log { "Retrieved quickMoveDestination: $it" }
-        )
-        val id = post(args)
-        idToArgs[id] = args
+        scope.launch {
+            val args = Args(
+                moveFile = moveFile,
+                quickMoveDestinations = getQuickMoveDestinations(moveFile.fileAndSourceType)
+                    .log { "Retrieved quickMoveDestination: $it" }
+            )
+            val id = post(args)
+            idToArgs[id] = args
+        }
     }
 
     override fun cancel(id: Int) {

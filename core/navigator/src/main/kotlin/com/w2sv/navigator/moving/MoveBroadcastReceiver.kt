@@ -4,9 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.w2sv.androidutils.content.intent
-import com.w2sv.common.di.AppDispatcher
-import com.w2sv.common.di.GlobalScope
-import com.w2sv.navigator.di.MoveOperationSummaryChannel
+import com.w2sv.common.di.ApplicationIoScope
+import com.w2sv.navigator.di.MoveSummaryChannel
 import com.w2sv.navigator.domain.moving.MoveOperation
 import com.w2sv.navigator.domain.moving.MoveOperationSummary
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,10 +17,10 @@ import kotlinx.coroutines.launch
 internal class MoveBroadcastReceiver : BroadcastReceiver() {
 
     @Inject
-    lateinit var moveOperationSummaryChannel: MoveOperationSummaryChannel
+    lateinit var moveSummaryChannel: MoveSummaryChannel
 
     @Inject
-    @GlobalScope(AppDispatcher.IO)
+    @ApplicationIoScope
     lateinit var scope: CoroutineScope
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -29,7 +28,7 @@ internal class MoveBroadcastReceiver : BroadcastReceiver() {
 
         scope.launch {
             operation.file.moveTo(destination = operation.destination, context = context) { result ->
-                moveOperationSummaryChannel.trySend(MoveOperationSummary(result, operation))
+                moveSummaryChannel.trySend(MoveOperationSummary(result, operation))
             }
         }
     }

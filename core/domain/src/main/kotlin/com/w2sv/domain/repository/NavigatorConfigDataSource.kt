@@ -4,6 +4,7 @@ import com.w2sv.datastoreutils.datastoreflow.DataStoreFlow
 import com.w2sv.domain.model.filetype.FileType
 import com.w2sv.domain.model.filetype.SourceType
 import com.w2sv.domain.model.movedestination.LocalDestinationApi
+import com.w2sv.domain.model.navigatorconfig.AutoMoveConfig
 import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
 import kotlinx.coroutines.flow.Flow
 
@@ -13,6 +14,7 @@ interface NavigatorConfigDataSource {
     // ==================
     // Auto move
     // ==================
+    fun autoMoveConfig(fileType: FileType, sourceType: SourceType): Flow<AutoMoveConfig>
 
     suspend fun unsetAutoMoveConfig(fileType: FileType, sourceType: SourceType)
 

@@ -1,4 +1,4 @@
-package com.w2sv.navigator.observing.di
+package com.w2sv.navigator.di
 
 import android.os.HandlerThread
 import com.w2sv.common.logging.log

@@ -1,7 +1,6 @@
 package com.w2sv.navigator.observing
 
 import android.content.ContentResolver
-import android.content.Context
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Handler
@@ -11,25 +10,21 @@ import com.w2sv.common.logging.log
 import com.w2sv.common.uri.MediaId
 import com.w2sv.common.uri.mediaUri
 import com.w2sv.domain.model.filetype.FileAndSourceType
-import com.w2sv.domain.model.filetype.FileType
-import com.w2sv.domain.model.filetype.SourceType
 import com.w2sv.domain.model.navigatorconfig.AutoMoveConfig
 import com.w2sv.kotlinutils.coroutines.flow.collectOn
 import com.w2sv.kotlinutils.coroutines.launchDelayed
 import com.w2sv.navigator.domain.moving.DestinationSelectionManner
-import com.w2sv.navigator.domain.moving.MediaIdWithMediaType
 import com.w2sv.navigator.domain.moving.MediaStoreFileData
 import com.w2sv.navigator.domain.moving.MoveDestination
 import com.w2sv.navigator.domain.moving.MoveFile
 import com.w2sv.navigator.domain.moving.MoveOperation
 import com.w2sv.navigator.domain.notifications.NotificationEvent
-import com.w2sv.navigator.domain.notifications.NotificationEventHandler
 import com.w2sv.navigator.moving.MoveBroadcastReceiver
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import slimber.log.i
 
 private data class MoveFileWithProcedureJob(val moveFile: MoveFile, val procedureJob: Job)
@@ -45,21 +40,14 @@ private enum class FileChangeOperation(private val flag: Int?) {
     Unclassified(null);
 
     companion object {
-        operator fun get(contentObserverOnChangeFlags: Int): FileChangeOperation =
+        operator fun invoke(contentObserverOnChangeFlags: Int): FileChangeOperation =
             entries.first { it.flag == null || it.flag and contentObserverOnChangeFlags != 0 }
     }
 }
 
-internal abstract class FileObserver(
-    val mediaType: MediaType,
-    private val context: Context,
-    private val notificationEventHandler: NotificationEventHandler,
-    private val mediaStoreDataProducer: MediaStoreDataProducer,
-    private val getAutoMoveConfig: (FileType, SourceType) -> AutoMoveConfig,
-    handler: Handler,
-    blacklistedMediaUris: SharedFlow<MediaIdWithMediaType>,
-    private val scope: CoroutineScope
-) : ContentObserver(handler) {
+internal abstract class FileObserver(val mediaType: MediaType, handler: Handler, environment: FileObserverEnvironment) :
+    ContentObserver(handler),
+    FileObserverEnvironment by environment {
 
     private val mediaIdBlacklist = EvictingQueue.create<MediaId>(3)
     private var moveFileWithProcedureJob: MoveFileWithProcedureJob? = null
@@ -77,7 +65,8 @@ internal abstract class FileObserver(
             }
     }
 
-    protected abstract val logIdentifier: String
+    open val logIdentifier: String
+        get() = this::class.java.simpleName
 
     override fun deliverSelfNotifications(): Boolean =
         false
@@ -88,7 +77,7 @@ internal abstract class FileObserver(
     }
 
     override fun onChange(selfChange: Boolean, uri: Uri?, flags: Int) {
-        when (FileChangeOperation[flags].also { emitOnChangeLog(uri, it) }) {
+        when (FileChangeOperation(flags).also { emitOnChangeLog(uri, it) }) {
             FileChangeOperation.Insert -> Unit
             FileChangeOperation.Update, FileChangeOperation.Unclassified -> onChangeCore(uri)
             FileChangeOperation.Delete -> cancelAndResetMoveFileProcedureJob()
@@ -107,8 +96,7 @@ internal abstract class FileObserver(
     private fun onChangeCore(uri: Uri?) {
         val mediaUri = uri?.mediaUri ?: return
 
-        val mediaId = mediaUri.id()
-        if (mediaId == null) {
+        val mediaId = mediaUri.id() ?: run {
             i { "mediaId null; discarding" }
             return
         }
@@ -124,54 +112,56 @@ internal abstract class FileObserver(
         )
             .asSuccessOrNull ?: return
 
-        if (mediaStoreDataRetrievalResult.isUpdateOfAlreadySeenFile) {
-            moveFileWithProcedureJob?.let {
-                if (mediaUri == it.moveFile.mediaUri) {
-                    it.procedureJob.cancel()
-                }
+        moveFileWithProcedureJob?.run {
+            val (moveFile, procedureJob) = this
+            if (mediaStoreDataRetrievalResult.isUpdateOfAlreadySeenFile && mediaUri == moveFile.mediaUri) {
+                procedureJob.cancel()
             }
         }
 
-        determineMatchingEnabledFileAndSourceTypeOrNull(mediaStoreDataRetrievalResult.data)
-            ?.let { fileAndSourceType ->
-                val moveFile = MoveFile(
-                    mediaUri = mediaUri,
-                    mediaStoreData = mediaStoreDataRetrievalResult.data,
-                    fileAndSourceType = fileAndSourceType
-                )
-                    .log { "Calling onMoveFile on $it" }
+        matchingFileAndSourceTypeOrNull(mediaStoreDataRetrievalResult.data)?.let { fileAndSourceType ->
+            val moveFile = MoveFile(
+                mediaUri = mediaUri,
+                mediaStoreData = mediaStoreDataRetrievalResult.data,
+                fileAndSourceType = fileAndSourceType
+            )
+                .log { "Calling onMoveFile on $it" }
 
-                val enabledAutoMoveDestination = getAutoMoveConfig(moveFile.fileType, moveFile.sourceType).enabledDestinationOrNull
+            scope.launch {
+                val enabledAutoMoveDestinationOrNull = navigatorConfigDataSource
+                    .autoMoveConfig(
+                        fileType = moveFile.fileType,
+                        sourceType = moveFile.sourceType
+                    )
+                    .first()
+                    .enabledDestinationOrNull
 
                 moveFileWithProcedureJob = MoveFileWithProcedureJob(
                     moveFile = moveFile,
                     procedureJob = scope.launchDelayed(CANCEL_PERIOD_MILLIS) {
-                        when (enabledAutoMoveDestination) {
-                            null -> {
-                                notificationEventHandler(NotificationEvent.PostMoveFile(moveFile))
-                            }
-
-                            else -> {
-                                MoveBroadcastReceiver.sendBroadcast(
-                                    operation = MoveOperation.AutoMove(
-                                        file = moveFile,
-                                        destination = enabledAutoMoveDestination,
-                                        destinationSelectionManner = DestinationSelectionManner.Auto
-                                    ),
-                                    context = context
-                                )
-                            }
+                        enabledAutoMoveDestinationOrNull?.let {
+                            // TODO Why not perform the moving directly instead of starting a receiver with parceling
+                            MoveBroadcastReceiver.sendBroadcast(
+                                operation = MoveOperation.AutoMove(
+                                    file = moveFile,
+                                    destination = enabledAutoMoveDestinationOrNull,
+                                    destinationSelectionManner = DestinationSelectionManner.Auto
+                                ),
+                                context = context
+                            )
+                        } ?: run {
+                            notificationEventHandler(NotificationEvent.PostMoveFile(moveFile))
                         }
                     }
                 )
             }
+        }
     }
 
     /**
-     * Determines the enabled [FileAndSourceType] combination, being subject of this [FileObserver] and corresponding to the [mediaStoreFileData], or `null` if there is none.
-     * This method determines whether the observer will fire for the observed file corresponding to [mediaStoreFileData] or not.
+     * This method determines whether the observer will fire for the received [mediaStoreFileData] or not.
      */
-    protected abstract fun determineMatchingEnabledFileAndSourceTypeOrNull(mediaStoreFileData: MediaStoreFileData): FileAndSourceType?
+    protected abstract fun matchingFileAndSourceTypeOrNull(mediaStoreFileData: MediaStoreFileData): FileAndSourceType?
 }
 
 private val AutoMoveConfig.enabledDestinationOrNull: MoveDestination.Directory?

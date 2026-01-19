@@ -6,20 +6,20 @@ import com.w2sv.domain.model.filetype.AnyPresetWrappingFileType
 import com.w2sv.domain.model.filetype.CustomFileType
 import com.w2sv.domain.model.filetype.FileType
 import com.w2sv.domain.model.filetype.PresetWrappingFileType
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
 import com.w2sv.domain.repository.MovedFileRepository
-import com.w2sv.domain.repository.NavigatorConfigDataSource
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
 class GetMoveHistoryUseCase @Inject constructor(
     private val movedFileRepository: MovedFileRepository,
-    private val navigatorConfigDataSource: NavigatorConfigDataSource
+    private val navigatorConfigFlow: Flow<NavigatorConfig>
 ) {
     operator fun invoke(): Flow<List<MovedFile>> =
         combine(
             movedFileRepository.getAllInDescendingOrder(),
-            navigatorConfigDataSource.navigatorConfig
+            navigatorConfigFlow
         ) { history, navigatorConfig ->
             history.map { movedFile ->
                 val updatedColor = navigatorConfig.fileTypeConfigMap.keys.firstOrNull { configFileType ->

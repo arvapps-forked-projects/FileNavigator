@@ -45,6 +45,9 @@ internal class NavigatorConfigDataSourceImpl @Inject constructor(
     // Auto move
     // ==================
 
+    override fun autoMoveConfig(fileType: FileType, sourceType: SourceType): Flow<AutoMoveConfig> =
+        navigatorConfig.map { it.sourceConfig(fileType, sourceType).autoMoveConfig }
+
     override suspend fun unsetAutoMoveConfig(fileType: FileType, sourceType: SourceType) {
         updateData {
             it.updateAutoMoveConfig(fileType, sourceType) {
