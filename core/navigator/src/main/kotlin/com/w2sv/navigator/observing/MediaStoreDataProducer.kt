@@ -1,7 +1,6 @@
 package com.w2sv.navigator.observing
 
 import android.content.ContentResolver
-import com.google.common.collect.EvictingQueue
 import com.w2sv.common.uri.MediaUri
 import com.w2sv.navigator.domain.moving.MediaStoreFileData
 import com.w2sv.navigator.shared.discardedLog
@@ -29,8 +28,7 @@ internal class MediaStoreDataProducer @Inject constructor() {
 
     private data class SeenParameters(val uri: MediaUri, val fileSize: Long)
 
-    private val seenParametersBuffer =
-        EvictingQueue.create<SeenParameters>(SEEN_FILES_BUFFER_SIZE)
+    private val seenParametersBuffer = RecentSet<SeenParameters>(SEEN_FILES_BUFFER_SIZE)
 
     operator fun invoke(mediaUri: MediaUri, contentResolver: ContentResolver): Result {
         // Fetch MediaStoreColumnData; exit if impossible
@@ -54,8 +52,10 @@ internal class MediaStoreDataProducer @Inject constructor() {
             return Result.AlreadySeen
         }
 
-        val fileInBuffer = seenParametersBuffer.removeIf { it.uri == seenParameters.uri }
-        seenParametersBuffer.add(seenParameters)
-        return Result.Success(data = columnData, isUpdateOfAlreadySeenFile = fileInBuffer)
+        val isUpdateOfAlreadySeenFile = seenParametersBuffer.replaceIf(
+            predicate = { it.uri == seenParameters.uri },
+            element = seenParameters
+        )
+        return Result.Success(data = columnData, isUpdateOfAlreadySeenFile = isUpdateOfAlreadySeenFile)
     }
 }

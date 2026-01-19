@@ -5,7 +5,6 @@ import android.database.ContentObserver
 import android.net.Uri
 import android.os.Handler
 import com.anggrayudi.storage.media.MediaType
-import com.google.common.collect.EvictingQueue
 import com.w2sv.common.logging.log
 import com.w2sv.common.uri.MediaId
 import com.w2sv.common.uri.mediaUri
@@ -49,7 +48,7 @@ internal abstract class FileObserver(val mediaType: MediaType, handler: Handler,
     ContentObserver(handler),
     FileObserverEnvironment by environment {
 
-    private val mediaIdBlacklist = EvictingQueue.create<MediaId>(3)
+    private val mediaIdBlacklist = RecentSet<MediaId>(3)
     private var moveFileWithProcedureJob: MoveFileWithProcedureJob? = null
 
     init {

@@ -129,7 +129,6 @@ dependencies {
 
     // Other
     implementation(libs.slimber)
-    implementation(libs.google.guava)
     implementation(libs.w2sv.simplestorage)
     implementation(libs.textflow)
     // Workaround for https://github.com/google/dagger/issues/5059

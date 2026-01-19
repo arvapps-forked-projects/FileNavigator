@@ -20,7 +20,6 @@ dependencies {
     implementation(libs.w2sv.kotlinutils)
     implementation(libs.slimber)
 
-    implementation(libs.google.guava)
     implementation(libs.w2sv.simplestorage)
 
     // ==============
