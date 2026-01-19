@@ -5,11 +5,14 @@ import com.w2sv.domain.model.filetype.CustomFileType
 import com.w2sv.domain.model.filetype.FileType
 import com.w2sv.domain.model.filetype.PresetFileType
 import com.w2sv.domain.model.filetype.SourceType
+import com.w2sv.domain.model.movedestination.LocalDestinationApi
 import com.w2sv.kotlinutils.copy
 import com.w2sv.kotlinutils.map
 import com.w2sv.kotlinutils.update
+import kotlinx.coroutines.flow.Flow
 
 typealias FileTypeConfigMap = Map<FileType, FileTypeConfig>
+typealias NavigatorConfigFlow = Flow<NavigatorConfig>
 
 data class NavigatorConfig(
     val fileTypeConfigMap: FileTypeConfigMap,
@@ -51,6 +54,12 @@ data class NavigatorConfig(
 
     fun sourceConfig(fileType: FileType, sourceType: SourceType): SourceConfig =
         fileTypeConfig(fileType).sourceTypeConfigMap.getValue(sourceType)
+
+    fun autoMoveConfig(fileType: FileType, sourceType: SourceType): AutoMoveConfig =
+        sourceConfig(fileType, sourceType).autoMoveConfig
+
+    fun quickMoveDestinations(fileType: FileType, sourceType: SourceType): List<LocalDestinationApi> =
+        sourceConfig(fileType, sourceType).quickMoveDestinations
 
     // ================
     // Copying with modifications

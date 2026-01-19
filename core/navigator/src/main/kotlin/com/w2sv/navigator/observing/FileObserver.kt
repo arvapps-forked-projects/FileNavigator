@@ -51,6 +51,9 @@ internal abstract class FileObserver(val mediaType: MediaType, handler: Handler,
     private val mediaIdBlacklist = RecentSet<MediaId>(3)
     private var moveFileWithProcedureJob: MoveFileWithProcedureJob? = null
 
+    open val logIdentifier: String
+        get() = this::class.java.simpleName
+
     init {
         blacklistedMediaUris
             .filter { it.mediaType == mediaType }
@@ -64,10 +67,7 @@ internal abstract class FileObserver(val mediaType: MediaType, handler: Handler,
             }
     }
 
-    open val logIdentifier: String
-        get() = this::class.java.simpleName
-
-    override fun deliverSelfNotifications(): Boolean =
+    final override fun deliverSelfNotifications(): Boolean =
         false
 
     private fun cancelAndResetMoveFileProcedureJob() {
@@ -127,12 +127,13 @@ internal abstract class FileObserver(val mediaType: MediaType, handler: Handler,
                 .log { "Calling onMoveFile on $it" }
 
             scope.launch {
-                val enabledAutoMoveDestinationOrNull = navigatorConfigDataSource
+                // TODO maybe cache via StateFlows
+                val enabledAutoMoveDestinationOrNull = navigatorConfigFlow
+                    .first()
                     .autoMoveConfig(
                         fileType = moveFile.fileType,
                         sourceType = moveFile.sourceType
                     )
-                    .first()
                     .enabledDestinationOrNull
 
                 moveFileWithProcedureJob = MoveFileWithProcedureJob(

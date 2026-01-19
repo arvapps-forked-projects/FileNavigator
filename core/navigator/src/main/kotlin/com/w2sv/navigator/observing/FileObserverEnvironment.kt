@@ -2,8 +2,7 @@ package com.w2sv.navigator.observing
 
 import android.content.Context
 import com.w2sv.common.di.ApplicationIoScope
-import com.w2sv.domain.repository.NavigatorConfigDataSource
-import com.w2sv.navigator.domain.moving.MediaIdWithMediaType
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
 import com.w2sv.navigator.domain.notifications.NotificationEventHandler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -22,7 +21,7 @@ internal interface FileObserverEnvironment {
     val mediaStoreDataProducer: MediaStoreDataProducer
     val blacklistedMediaUris: SharedFlow<MediaIdWithMediaType>
     val notificationEventHandler: NotificationEventHandler
-    val navigatorConfigDataSource: NavigatorConfigDataSource
+    val navigatorConfigFlow: NavigatorConfigFlow
 }
 
 internal class FileObserverEnvironmentImpl @Inject constructor(
@@ -31,5 +30,5 @@ internal class FileObserverEnvironmentImpl @Inject constructor(
     override val mediaStoreDataProducer: MediaStoreDataProducer,
     override val blacklistedMediaUris: SharedFlow<MediaIdWithMediaType>,
     override val notificationEventHandler: NotificationEventHandler,
-    override val navigatorConfigDataSource: NavigatorConfigDataSource
+    override val navigatorConfigFlow: NavigatorConfigFlow
 ) : FileObserverEnvironment

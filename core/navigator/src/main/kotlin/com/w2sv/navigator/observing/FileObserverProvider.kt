@@ -5,20 +5,20 @@ import android.os.HandlerThread
 import com.w2sv.common.logging.log
 import com.w2sv.common.util.filterKeysByValueToSet
 import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
 import com.w2sv.navigator.di.FileObserverHandlerThread
 import javax.inject.Inject
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import slimber.log.i
 
 internal class FileObserverProvider @Inject constructor(
-    private val navigatorConfig: Flow<NavigatorConfig>,
+    private val navigatorConfigFlow: NavigatorConfigFlow,
     @FileObserverHandlerThread private val handlerThread: HandlerThread,
     private val environment: FileObserverEnvironmentImpl
 ) {
     suspend operator fun invoke(): List<FileObserver> {
         val handler = Handler(handlerThread.looper)
-        val navigatorConfig = navigatorConfig.first()
+        val navigatorConfig = navigatorConfigFlow.first()
 
         return buildList {
             addAll(mediaObservers(navigatorConfig, handler))

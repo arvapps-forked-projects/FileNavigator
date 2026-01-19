@@ -1,7 +1,7 @@
 package com.w2sv.navigator.notifications
 
 import com.w2sv.common.di.ApplicationIoScope
-import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
 import com.w2sv.navigator.domain.notifications.NotificationEvent
 import com.w2sv.navigator.domain.notifications.NotificationEventHandler
 import com.w2sv.navigator.notifications.controller.AutoMoveDestinationInvalidNotificationController
@@ -12,13 +12,12 @@ import com.w2sv.navigator.notifications.controller.BatchMoveResultsNotificationC
 import com.w2sv.navigator.notifications.controller.MoveFileNotificationController
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 internal class NotificationEventHandlerImpl @Inject constructor(
-    navigatorConfig: Flow<NavigatorConfig>,
+    navigatorConfigFlow: NavigatorConfigFlow,
     @ApplicationIoScope private val scope: CoroutineScope,
     private val moveFileNotificationController: MoveFileNotificationController,
     private val batchMoveNotificationController: BatchMoveNotificationController,
@@ -28,7 +27,7 @@ internal class NotificationEventHandlerImpl @Inject constructor(
 ) : NotificationEventHandler {
 
     private val showBatchMoveNotification =
-        navigatorConfig
+        navigatorConfigFlow
             .map { it.showBatchMoveNotification }
             .stateIn(scope, SharingStarted.Eagerly, false)
 

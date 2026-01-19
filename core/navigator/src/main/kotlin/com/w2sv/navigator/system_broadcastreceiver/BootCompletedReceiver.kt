@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import com.w2sv.common.logging.LoggingBroadcastReceiver
-import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
 import com.w2sv.navigator.FileNavigator
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -12,7 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -27,7 +26,7 @@ import kotlinx.coroutines.launch
 internal class BootCompletedReceiver : LoggingBroadcastReceiver() {
 
     @Inject
-    lateinit var navigatorConfig: Flow<NavigatorConfig>
+    lateinit var navigatorConfig: NavigatorConfigFlow
 
     @SuppressLint("UnsafeProtectedBroadcastReceiver")
     override fun onReceive(context: Context, intent: Intent) {

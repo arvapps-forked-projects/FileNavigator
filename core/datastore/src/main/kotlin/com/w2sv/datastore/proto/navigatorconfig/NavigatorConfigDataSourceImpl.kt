@@ -11,7 +11,6 @@ import com.w2sv.domain.model.navigatorconfig.AutoMoveConfig
 import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
 import com.w2sv.domain.repository.NavigatorConfigDataSource
 import javax.inject.Inject
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 internal class NavigatorConfigDataSourceImpl @Inject constructor(
@@ -44,9 +43,6 @@ internal class NavigatorConfigDataSourceImpl @Inject constructor(
     // ==================
     // Auto move
     // ==================
-
-    override fun autoMoveConfig(fileType: FileType, sourceType: SourceType): Flow<AutoMoveConfig> =
-        navigatorConfig.map { it.sourceConfig(fileType, sourceType).autoMoveConfig }
 
     override suspend fun unsetAutoMoveConfig(fileType: FileType, sourceType: SourceType) {
         updateData {
@@ -86,9 +82,6 @@ internal class NavigatorConfigDataSourceImpl @Inject constructor(
             }
         }
     }
-
-    override fun quickMoveDestinations(fileType: FileType, sourceType: SourceType): Flow<List<LocalDestinationApi>> =
-        navigatorConfig.map { it.sourceConfig(fileType, sourceType).quickMoveDestinations }
 }
 
 @VisibleForTesting

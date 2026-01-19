@@ -6,7 +6,7 @@ import com.w2sv.domain.model.filetype.AnyPresetWrappingFileType
 import com.w2sv.domain.model.filetype.CustomFileType
 import com.w2sv.domain.model.filetype.FileType
 import com.w2sv.domain.model.filetype.PresetWrappingFileType
-import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
 import com.w2sv.domain.repository.MovedFileRepository
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.combine
 
 class GetMoveHistoryUseCase @Inject constructor(
     private val movedFileRepository: MovedFileRepository,
-    private val navigatorConfigFlow: Flow<NavigatorConfig>
+    private val navigatorConfigFlow: NavigatorConfigFlow
 ) {
     operator fun invoke(): Flow<List<MovedFile>> =
         combine(

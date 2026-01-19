@@ -3,8 +3,8 @@ package com.w2sv.navigator.di
 import android.content.ContentResolver
 import android.content.Context
 import com.w2sv.navigator.FileNavigator
-import com.w2sv.navigator.domain.moving.MediaIdWithMediaType
 import com.w2sv.navigator.domain.moving.MoveOperationSummary
+import com.w2sv.navigator.observing.MediaIdWithMediaType
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

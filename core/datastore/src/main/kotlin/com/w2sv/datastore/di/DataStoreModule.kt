@@ -11,7 +11,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.w2sv.datastore.NavigatorConfigProto
 import com.w2sv.datastore.migration.NavigatorPreferencesToProtoMigration
 import com.w2sv.datastore.proto.navigatorconfig.NavigatorConfigProtoSerializer
-import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
 import com.w2sv.domain.repository.NavigatorConfigDataSource
 import dagger.Module
 import dagger.Provides
@@ -19,7 +19,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.Flow
 
 @InstallIn(SingletonComponent::class)
 @Module
@@ -46,6 +45,6 @@ internal object DataStoreModule {
         )
 
     @Provides
-    fun navigatorConfig(dataSource: NavigatorConfigDataSource): Flow<NavigatorConfig> =
+    fun navigatorConfigFlow(dataSource: NavigatorConfigDataSource): NavigatorConfigFlow =
         dataSource.navigatorConfig
 }

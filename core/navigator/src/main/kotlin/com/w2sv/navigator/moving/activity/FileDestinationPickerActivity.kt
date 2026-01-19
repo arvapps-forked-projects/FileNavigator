@@ -14,12 +14,12 @@ import com.w2sv.common.util.takePersistableReadAndWriteUriPermission
 import com.w2sv.kotlinutils.coroutines.flow.emit
 import com.w2sv.kotlinutils.threadUnsafeLazy
 import com.w2sv.navigator.domain.moving.DestinationSelectionManner
-import com.w2sv.navigator.domain.moving.MediaIdWithMediaType
 import com.w2sv.navigator.domain.moving.MoveDestination
 import com.w2sv.navigator.domain.moving.MoveFile
 import com.w2sv.navigator.domain.moving.MoveOperation
 import com.w2sv.navigator.domain.notifications.CancelNotificationEvent
 import com.w2sv.navigator.moving.MoveBroadcastReceiver
+import com.w2sv.navigator.observing.MediaIdWithMediaType
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -79,24 +79,24 @@ internal class FileDestinationPickerActivity : DestinationPickerActivityApi() {
         contentResolver.takePersistableReadAndWriteUriPermission(contentUri) // TODO: necessary?
 
         val destination = MoveDestination.File(contentUri.documentUri, this)
-            .also {
-                // In case of local file, emit MediaIdWithMediaType on blacklistedMediaUris to
-                // prevent notification emission for created move destination file
-                it.localOrNull?.let { localFileDestination ->
-                    blacklistedMediaUris.emit(
-                        value = MediaIdWithMediaType(
-                            mediaId = localFileDestination.mediaUri.id()!!,
-                            mediaType = args.moveFile.fileType.mediaType
-                        )
-                            .log { "Emitting $it" },
-                        scope = lifecycleScope
-                    )
-                }
-            }
+        // In case of local file, emit MediaIdWithMediaType on blacklistedMediaUris to
+        // prevent notification emission for created move destination file
+        destination.localOrNull?.let { blacklistCreatedFileDestination(it) }
 
         MoveBroadcastReceiver.sendBroadcast(
             operation = args.moveOperation(destination),
             context = this
+        )
+    }
+
+    private fun blacklistCreatedFileDestination(destination: MoveDestination.File.Local) {
+        blacklistedMediaUris.emit(
+            value = MediaIdWithMediaType(
+                mediaId = checkNotNull(destination.mediaUri.id()),
+                mediaType = args.moveFile.fileType.mediaType
+            )
+                .log { "Emitting $it to blacklist" },
+            scope = lifecycleScope
         )
     }
 
