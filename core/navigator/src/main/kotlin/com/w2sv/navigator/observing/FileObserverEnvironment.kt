@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.SharedFlow
 internal interface FileObserverEnvironment {
     val context: Context
     val scope: CoroutineScope
-    val mediaStoreDataProducer: MediaStoreDataProducer
+    val mediaStoreDataProvider: MediaStoreDataProvider
     val blacklistedMediaUris: SharedFlow<MediaIdWithMediaType>
     val notificationEventHandler: NotificationEventHandler
     val navigatorConfigFlow: NavigatorConfigFlow
@@ -27,7 +27,7 @@ internal interface FileObserverEnvironment {
 internal class FileObserverEnvironmentImpl @Inject constructor(
     @ApplicationContext override val context: Context,
     @ApplicationIoScope override val scope: CoroutineScope,
-    override val mediaStoreDataProducer: MediaStoreDataProducer,
+    override val mediaStoreDataProvider: MediaStoreDataProvider,
     override val blacklistedMediaUris: SharedFlow<MediaIdWithMediaType>,
     override val notificationEventHandler: NotificationEventHandler,
     override val navigatorConfigFlow: NavigatorConfigFlow
