@@ -171,4 +171,9 @@
     <string name="navigator">Navigator</string>
     <string name="disable">禁用</string>
     <string name="automoved_label">自动移动</string>
+    <string name="quick_settings_tile">快速设置磁贴</string>
+    <string name="add">添加</string>
+    <string name="tile_successully_added">磁贴已成功添加。</string>
+    <string name="tile_already_added">磁贴已存在。</string>
+    <string name="tile_adding_unsuccessful">无法添加磁贴。</string>
 </resources>

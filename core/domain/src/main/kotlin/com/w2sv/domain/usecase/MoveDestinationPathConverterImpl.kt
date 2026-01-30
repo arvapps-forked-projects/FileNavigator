@@ -1,8 +1,7 @@
 package com.w2sv.domain.usecase
 
 import android.content.Context
-import com.w2sv.common.di.AppDispatcher
-import com.w2sv.common.di.GlobalScope
+import com.w2sv.common.di.ApplicationIoScope
 import com.w2sv.domain.model.movedestination.ExternalDestinationApi
 import com.w2sv.domain.model.movedestination.LocalDestinationApi
 import com.w2sv.domain.model.movedestination.MoveDestinationApi
@@ -15,8 +14,9 @@ import kotlinx.coroutines.flow.SharingStarted
 @Singleton
 internal class MoveDestinationPathConverterImpl @Inject constructor(
     preferencesRepository: PreferencesRepository,
-    @GlobalScope(AppDispatcher.Default) scope: CoroutineScope
+    @ApplicationIoScope scope: CoroutineScope
 ) : MoveDestinationPathConverter {
+
     private val showStorageVolumeNames =
         preferencesRepository.showStorageVolumeNames.stateIn(scope, SharingStarted.Eagerly)
 
@@ -35,6 +35,6 @@ internal class MoveDestinationPathConverterImpl @Inject constructor(
                 )
             }
 
-            else -> throw IllegalArgumentException()
+            else -> error("Shouldn't occur")
         }
 }

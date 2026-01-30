@@ -3,14 +3,15 @@ package com.w2sv.navigator.system_broadcastreceiver
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import com.w2sv.common.di.AppDispatcher
-import com.w2sv.common.di.GlobalScope
 import com.w2sv.common.logging.LoggingBroadcastReceiver
-import com.w2sv.domain.repository.NavigatorConfigDataSource
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
 import com.w2sv.navigator.FileNavigator
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -25,19 +26,25 @@ import kotlinx.coroutines.launch
 internal class BootCompletedReceiver : LoggingBroadcastReceiver() {
 
     @Inject
-    lateinit var navigatorConfigDataSource: NavigatorConfigDataSource
-
-    @Inject
-    @GlobalScope(AppDispatcher.Default)
-    internal lateinit var scope: CoroutineScope
+    lateinit var navigatorConfig: NavigatorConfigFlow
 
     @SuppressLint("UnsafeProtectedBroadcastReceiver")
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
 
+        // Tell the system we are doing async work
+        val pendingResult = goAsync()
+
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
         scope.launch {
-            if (navigatorConfigDataSource.navigatorConfig.first().startOnBoot && FileNavigator.necessaryPermissionsGranted(context)) {
-                FileNavigator.start(context)
+            try {
+                if (navigatorConfig.first().startOnBoot && FileNavigator.necessaryPermissionsGranted(context)) {
+                    FileNavigator.start(context)
+                }
+            } finally {
+                pendingResult.finish()
+                scope.cancel()
             }
         }
     }

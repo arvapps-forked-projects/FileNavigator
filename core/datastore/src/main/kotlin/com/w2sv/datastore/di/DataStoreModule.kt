@@ -11,6 +11,8 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.w2sv.datastore.NavigatorConfigProto
 import com.w2sv.datastore.migration.NavigatorPreferencesToProtoMigration
 import com.w2sv.datastore.proto.navigatorconfig.NavigatorConfigProtoSerializer
+import com.w2sv.domain.model.navigatorconfig.NavigatorConfigFlow
+import com.w2sv.domain.repository.NavigatorConfigDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,11 +22,11 @@ import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
 @Module
-object DataStoreModule {
+internal object DataStoreModule {
 
-    @Singleton
     @Provides
-    fun preferencesDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+    @Singleton
+    internal fun preferencesDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
             produceFile = { context.preferencesDataStoreFile(context.packageName) }
         )
@@ -38,13 +40,11 @@ object DataStoreModule {
         DataStoreFactory.create(
             serializer = NavigatorConfigProtoSerializer,
             corruptionHandler = ReplaceFileCorruptionHandler { NavigatorConfigProtoSerializer.defaultValue },
-            produceFile = {
-                context.dataStoreFile("navigator_config.pb")
-            },
-            migrations = listOf(
-                NavigatorPreferencesToProtoMigration(
-                    preferencesDataStore = preferencesDataStore
-                )
-            )
+            produceFile = { context.dataStoreFile("navigator_config.pb") },
+            migrations = listOf(NavigatorPreferencesToProtoMigration(preferencesDataStore = preferencesDataStore))
         )
+
+    @Provides
+    fun navigatorConfigFlow(dataSource: NavigatorConfigDataSource): NavigatorConfigFlow =
+        dataSource.navigatorConfig
 }

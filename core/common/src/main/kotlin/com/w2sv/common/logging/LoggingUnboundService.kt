@@ -2,7 +2,7 @@ package com.w2sv.common.logging
 
 import android.content.Intent
 import android.content.res.Configuration
-import com.w2sv.androidutils.content.logString
+import com.w2sv.androidutils.content.toDebugString
 import com.w2sv.androidutils.service.UnboundService
 import slimber.log.i
 
@@ -18,7 +18,7 @@ abstract class LoggingUnboundService : UnboundService() {
     }
 
     protected fun logOnStartCommand(intent: Intent?) {
-        i { "Lifecycle: $logIdentifier.onStartCommand | intent=${intent?.logString()}" }
+        i { "Lifecycle: $logIdentifier.onStartCommand | intent=${intent?.toDebugString()}" }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -47,7 +47,7 @@ abstract class LoggingUnboundService : UnboundService() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        i { "Lifecycle: $logIdentifier.onTaskRemoved | rootIntent=${rootIntent?.logString()}" }
+        i { "Lifecycle: $logIdentifier.onTaskRemoved | rootIntent=${rootIntent?.toDebugString()}" }
         super.onTaskRemoved(rootIntent)
     }
 

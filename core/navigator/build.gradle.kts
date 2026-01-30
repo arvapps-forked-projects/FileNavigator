@@ -5,8 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
 }
 
-android { buildFeatures.viewBinding = true }
-
 dependencies {
     implementation(projects.core.common)
     implementation(projects.core.designsystem)
@@ -21,8 +19,6 @@ dependencies {
     implementation(libs.w2sv.androidutils.core)
     implementation(libs.w2sv.kotlinutils)
     implementation(libs.slimber)
-
-    implementation(libs.google.guava)
 
     implementation(libs.w2sv.simplestorage)
 

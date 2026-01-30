@@ -1,10 +1,10 @@
 package com.w2sv.navigator.di
 
+import android.content.ContentResolver
 import android.content.Context
-import com.w2sv.androidutils.service.isServiceRunning
 import com.w2sv.navigator.FileNavigator
-import com.w2sv.navigator.domain.moving.MediaIdWithMediaType
 import com.w2sv.navigator.domain.moving.MoveOperationSummary
+import com.w2sv.navigator.observing.MediaIdWithMediaType
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -13,24 +13,24 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
-internal typealias MoveOperationSummaryChannel = Channel<MoveOperationSummary>
+internal typealias MoveSummaryChannel = Channel<MoveOperationSummary>
 
 @InstallIn(SingletonComponent::class)
 @Module
 internal object FileNavigatorModule {
 
-    @Singleton
+    @FileNavigatorIsRunning
     @Provides
-    fun fileNavigatorIsRunning(@ApplicationContext context: Context): FileNavigator.IsRunning =
-        FileNavigator.IsRunning(mutableStateFlow = MutableStateFlow(context.isServiceRunning<FileNavigator>()))
+    fun fileNavigatorIsRunning(status: FileNavigator.Status): StateFlow<Boolean> =
+        status.isRunning
 
     @Singleton
     @Provides
-    fun moveOperationSummaryChannel(): MoveOperationSummaryChannel =
+    fun moveOperationSummaryChannel(): MoveSummaryChannel =
         Channel(Channel.BUFFERED)
 
     @Singleton
@@ -44,4 +44,8 @@ internal object FileNavigatorModule {
         mutableBlacklistedMediaUriSharedFlow: MutableSharedFlow<MediaIdWithMediaType>
     ): SharedFlow<MediaIdWithMediaType> =
         mutableBlacklistedMediaUriSharedFlow.asSharedFlow()
+
+    @Provides
+    fun contentResolver(@ApplicationContext context: Context): ContentResolver =
+        context.contentResolver
 }

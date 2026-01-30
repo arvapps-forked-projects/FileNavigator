@@ -6,11 +6,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.w2sv.core.common.R
 import com.w2sv.domain.model.navigatorconfig.NavigatorConfig
+import com.w2sv.filenavigator.ui.designsystem.ItemRow
 import com.w2sv.filenavigator.ui.designsystem.ItemRowIcon
 import com.w2sv.filenavigator.ui.designsystem.SwitchItemRow
 import com.w2sv.filenavigator.ui.screen.navigatorsettings.list.navigatorconfigactions.NavigatorConfigActions
@@ -50,6 +53,24 @@ fun LazyListScope.moreItemList(config: NavigatorConfig, actions: NavigatorConfig
             padding = NavigatorSettingsListTokens.moreSectionHeaderPadding
         )
     }
+    val itemRowModifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 4.dp)
+        .padding(bottom = 2.dp)
+
+    if (isRequestQuickSettingsTileSupported) {
+        item {
+            ItemRow(
+                icon = { ItemRowIcon(R.drawable.ic_tile_small_24) },
+                labelRes = R.string.quick_settings_tile,
+                modifier = itemRowModifier
+            ) {
+                ElevatedButton(onClick = rememberRequestAddFileNavigatorTile()) {
+                    Text(stringResource(R.string.add))
+                }
+            }
+        }
+    }
     items(MoreListItem.entries, key = { it }) { item ->
         SwitchItemRow(
             icon = { ItemRowIcon(res = item.iconRes) },
@@ -57,10 +78,7 @@ fun LazyListScope.moreItemList(config: NavigatorConfig, actions: NavigatorConfig
             checked = item.checked(config),
             onCheckedChange = { item.onCheckedChange(actions, it) },
             explanation = item.explanationRes?.let { stringResource(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-                .padding(bottom = 2.dp)
+            modifier = itemRowModifier
         )
     }
 }

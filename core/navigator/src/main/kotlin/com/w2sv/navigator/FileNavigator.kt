@@ -7,10 +7,18 @@ import com.w2sv.common.logging.LoggingUnboundService
 import com.w2sv.common.util.hasManageAllFilesPermission
 import com.w2sv.common.util.hasPostNotificationsPermission
 import com.w2sv.navigator.domain.notifications.ForegroundNotificationProvider
+import com.w2sv.navigator.observing.FileObserverManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import slimber.log.i
 import slimber.log.w
 
@@ -18,13 +26,19 @@ import slimber.log.w
 class FileNavigator : LoggingUnboundService() {
 
     @Inject
-    internal lateinit var isRunning: IsRunning
+    internal lateinit var status: Status
 
     @Inject
     internal lateinit var foregroundNotificationProvider: ForegroundNotificationProvider
 
     @Inject
-    internal lateinit var fileNavigationLauncher: FileNavigationLauncher
+    internal lateinit var fileObserverManager: FileObserverManager
+
+    @Inject
+    internal lateinit var moveResultCollector: MoveResultCollector
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var moveResultCollectionJob: Job? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         logOnStartCommand(intent)
@@ -32,7 +46,7 @@ class FileNavigator : LoggingUnboundService() {
         when (val action = intent?.action) {
             Action.START -> start()
             Action.STOP -> stop()
-            Action.REREGISTER_FILE_OBSERVERS -> fileNavigationLauncher.reregisterFileObservers()
+            Action.REREGISTER_FILE_OBSERVERS -> serviceScope.launch { fileObserverManager.reregisterFileObservers() }
             else -> w { "Service started with unknown action: $action" }
         }
 
@@ -46,28 +60,37 @@ class FileNavigator : LoggingUnboundService() {
             foregroundNotificationProvider.notification()
         )
 
-        fileNavigationLauncher.launch()
-        isRunning.set(true)
+        serviceScope.launch {
+            fileObserverManager.registerFileObservers()
+            moveResultCollectionJob?.cancel()
+            moveResultCollectionJob = launch { moveResultCollector.startCollecting() }
+        }
+        status.setIsRunning(true)
     }
 
     private fun stop() {
         i { "Stopping FileNavigator" }
-        isRunning.set(false)
+        status.setIsRunning(false)
+        moveResultCollectionJob?.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        fileNavigationLauncher.tearDown()
-        isRunning.set(false)
+        fileObserverManager.tearDown()
+        serviceScope.cancel()
+        status.setIsRunning(false)
     }
 
-    class IsRunning internal constructor(private val mutableStateFlow: MutableStateFlow<Boolean>) :
-        StateFlow<Boolean> by mutableStateFlow {
+    @Singleton
+    internal class Status @Inject constructor() {
 
-        internal fun set(value: Boolean) {
-            mutableStateFlow.value = value
+        val isRunning: StateFlow<Boolean>
+            field = MutableStateFlow(false)
+
+        fun setIsRunning(value: Boolean) {
+            isRunning.value = value
         }
     }
 

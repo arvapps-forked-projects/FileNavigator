@@ -21,7 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.lifecycleScope
-import com.w2sv.androidutils.content.restartActivityTaskIntent
+import com.w2sv.androidutils.content.componentName
 import com.w2sv.common.logging.LoggingComponentActivity
 import com.w2sv.common.util.takePersistableReadAndWriteUriPermission
 import com.w2sv.composed.core.rememberStyledTextResource
@@ -161,7 +161,7 @@ internal class QuickMoveDestinationAccessPermissionActivity : LoggingComponentAc
 
     companion object {
         fun intent(moveOperation: MoveOperation.QuickMove, context: Context): Intent =
-            restartActivityTaskIntent<QuickMoveDestinationAccessPermissionActivity>(context)
+            Intent.makeRestartActivityTask(componentName<QuickMoveDestinationAccessPermissionActivity>(context))
                 .putExtra(MoveOperation.EXTRA, moveOperation)
     }
 }

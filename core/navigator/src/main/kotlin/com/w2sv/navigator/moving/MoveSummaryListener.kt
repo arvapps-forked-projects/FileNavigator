@@ -2,8 +2,7 @@ package com.w2sv.navigator.moving
 
 import android.content.Context
 import com.w2sv.androidutils.widget.showToast
-import com.w2sv.common.di.AppDispatcher
-import com.w2sv.common.di.GlobalScope
+import com.w2sv.common.di.ApplicationIoScope
 import com.w2sv.domain.repository.NavigatorConfigDataSource
 import com.w2sv.domain.usecase.InsertMovedFileUseCase
 import com.w2sv.navigator.domain.moving.MoveFile
@@ -21,11 +20,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import slimber.log.i
 
-internal class MoveResultListener @Inject constructor(
+internal class MoveSummaryListener @Inject constructor(
     private val insertMovedFileUseCase: InsertMovedFileUseCase,
     private val navigatorConfigDataSource: NavigatorConfigDataSource,
     private val notificationEventHandler: NotificationEventHandler,
-    @GlobalScope(AppDispatcher.IO) private val scope: CoroutineScope,
+    @ApplicationIoScope private val scope: CoroutineScope,
     @ApplicationContext private val context: Context
 ) {
     suspend fun onMoveResult(summary: MoveOperationSummary) {

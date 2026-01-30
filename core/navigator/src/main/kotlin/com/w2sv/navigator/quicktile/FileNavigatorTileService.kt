@@ -1,60 +1,67 @@
 package com.w2sv.navigator.quicktile
 
 import android.annotation.SuppressLint
-import android.app.Dialog
 import android.os.Build
 import android.service.quicksettings.Tile
-import android.service.quicksettings.TileService
 import androidx.annotation.IntDef
-import com.w2sv.common.di.AppDispatcher
-import com.w2sv.common.di.GlobalScope
-import com.w2sv.core.navigator.R
-import com.w2sv.kotlinutils.coroutines.flow.collectOn
-import com.w2sv.kotlinutils.coroutines.launchDelayed
 import com.w2sv.navigator.FileNavigator
+import com.w2sv.navigator.di.FileNavigatorIsRunning
 import com.w2sv.navigator.shared.mainActivityIntent
 import com.w2sv.navigator.shared.mainActivityPendingIntent
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
-import slimber.log.i
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-internal class FileNavigatorTileService : TileService() {
+class FileNavigatorTileService : LoggingTileService() {
 
     @Inject
-    @GlobalScope(AppDispatcher.Default)
-    internal lateinit var scope: CoroutineScope
+    @FileNavigatorIsRunning
+    internal lateinit var fileNavigatorIsRunning: StateFlow<Boolean>
 
-    @Inject
-    internal lateinit var fileNavigatorIsRunning: FileNavigator.IsRunning
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var listeningJob: Job? = null
 
     /**
-     * Called every time the quick tile pan is expanded. onStopListening behaves vice-versa.
+     * Called every time the quick settings pan is expanded. onStopListening behaves vice-versa.
      */
     override fun onStartListening() {
-        i { "onStartListening" }
+        super.onStartListening()
 
-        // Update tile state reactively on navigator status change
-        fileNavigatorIsRunning.collectOn(scope) { isRunning ->
-            updateTileState(if (isRunning) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE)
+        // Launch navigator and tile state synchronization job
+        listeningJob?.cancel()
+        listeningJob = scope.launch {
+            fileNavigatorIsRunning.collect { isRunning ->
+                qsTile.updateState(if (isRunning) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE)
+            }
         }
     }
 
     override fun onClick() {
-        when (qsTile.state) {
-            Tile.STATE_ACTIVE -> {
-                FileNavigator.stop(this)
-            }
+        super.onClick()
 
-            Tile.STATE_INACTIVE -> {
-                // Start navigator if all required permissions are granted, otherwise launch MainActivity, which will invoke the 'Required Permissions' screen
-                if (FileNavigator.necessaryPermissionsGranted(this)) {
-                    showDialogAndLaunchNavigator()
-                } else {
-                    startMainActivityAndCollapse()
-                }
-            }
+        when (qsTile.state) {
+            Tile.STATE_ACTIVE -> FileNavigator.stop(this)
+            Tile.STATE_INACTIVE -> activateNavigator()
+        }
+    }
+
+    /**
+     * Either
+     * - starts the navigator immediately via launch dialog if permissions are granted
+     * or
+     * - launches MainActivity if required permissions are missing, which will result in the permissions screen being shown
+     */
+    private fun activateNavigator() {
+        when (FileNavigator.necessaryPermissionsGranted(this)) {
+            true -> FileNavigator.start(this@FileNavigatorTileService)
+            false -> startMainActivityAndCollapse()
         }
     }
 
@@ -68,37 +75,21 @@ internal class FileNavigatorTileService : TileService() {
         }
     }
 
-    /**
-     * Starting from Sdk Version 31 (Android 12), foreground services can't be started from the background.
-     * Therefore show a Dialog, which promotes the app to a foreground process state, and start the FGS while it's showing.
-     *
-     * https://developer.android.com/develop/background-work/services/foreground-services#bg-access-restrictions
-     * https://stackoverflow.com/questions/77331327/start-a-foreground-service-from-a-quick-tile-on-android-targetsdkversion-34-and
-     */
-    private fun showDialogAndLaunchNavigator() {
-        showDialog(
-            Dialog(this)
-                .apply {
-                    setTheme(R.style.RoundedCornersAlertDialog)
-                    setContentView(R.layout.tile_dialog)
-                    setOnShowListener {
-                        scope.launchDelayed(
-                            250
-                        ) {
-                            // Add small delay to make the dialog visible for a bit longer than merely a couple of milliseconds for better UX
-                            FileNavigator.start(this@FileNavigatorTileService)
-                            dismiss()
-                        }
-                    }
-                }
-        )
+    override fun onStopListening() {
+        super.onStopListening()
+        listeningJob?.cancel()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
     }
 }
 
 @IntDef(Tile.STATE_ACTIVE, Tile.STATE_INACTIVE, Tile.STATE_UNAVAILABLE)
 private annotation class TileState
 
-private fun TileService.updateTileState(@TileState state: Int) {
-    qsTile.state = state
-    qsTile.updateTile()
+private fun Tile.updateState(@TileState state: Int) {
+    this.state = state
+    updateTile()
 }

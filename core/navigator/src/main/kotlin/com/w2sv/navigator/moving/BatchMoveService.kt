@@ -5,10 +5,8 @@ import android.content.Intent
 import android.os.Parcelable
 import com.w2sv.androidutils.content.getParcelableCompat
 import com.w2sv.androidutils.content.intent
-import com.w2sv.common.di.AppDispatcher
-import com.w2sv.common.di.GlobalScope
 import com.w2sv.common.logging.LoggingUnboundService
-import com.w2sv.navigator.di.MoveOperationSummaryChannel
+import com.w2sv.navigator.di.MoveSummaryChannel
 import com.w2sv.navigator.domain.moving.MoveDestination
 import com.w2sv.navigator.domain.moving.MoveOperation
 import com.w2sv.navigator.domain.moving.MoveOperationSummary
@@ -19,11 +17,15 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import slimber.log.e
+import slimber.log.i
 import slimber.log.w
 
 @AndroidEntryPoint
@@ -33,12 +35,9 @@ internal class BatchMoveService : LoggingUnboundService() {
     lateinit var notificationEventHandler: NotificationEventHandler
 
     @Inject
-    lateinit var moveOperationSummaryChannel: MoveOperationSummaryChannel
+    lateinit var moveSummaryChannel: MoveSummaryChannel
 
-    @Inject
-    @GlobalScope(AppDispatcher.Default)
-    lateinit var scope: CoroutineScope
-
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var batchMoveJob: Job? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -71,7 +70,7 @@ internal class BatchMoveService : LoggingUnboundService() {
     // ----------------------
 
     private fun startBatchMove(bundles: List<MoveOperation.Batchable>, destination: MoveDestination.Directory) {
-        batchMoveJob = scope.launch {
+        batchMoveJob = serviceScope.launch {
             val total = bundles.size
             notifyBatchProgress(current = 0, total = total)
 
@@ -81,7 +80,7 @@ internal class BatchMoveService : LoggingUnboundService() {
                 context = applicationContext,
                 onResult = { index, summary ->
                     notifyBatchProgress(current = index + 1, total = total)
-                    moveOperationSummaryChannel.trySend(summary)
+                    moveSummaryChannel.trySend(summary)
                 }
             )
 
@@ -112,6 +111,7 @@ internal class BatchMoveService : LoggingUnboundService() {
                     }
                 }
             } catch (_: CancellationException) {
+                i { "Caught CancellationException" }
             }
         }
     }
@@ -140,6 +140,7 @@ internal class BatchMoveService : LoggingUnboundService() {
 
     override fun onDestroy() {
         batchMoveJob?.cancel()
+        serviceScope.cancel()
         super.onDestroy()
     }
 
